@@ -47,4 +47,6 @@ if __name__ == "__main__":
         "2": run_numpy_version,
         "3": run_pytorch_version,
     }
-    versions[main()]()
+    choice = main()
+    print("\033c")
+    versions[choice]()

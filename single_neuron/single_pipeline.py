@@ -2,7 +2,6 @@ from single_neuron.single_neuron import Neuron
 
 
 def run_single_neuron_version():
-    print("\033c")
     print("Creating a neuron with 3 inputs and sigmoid activation...\n")
     neuron = Neuron(num_inputs=3, activation="sigmoid")
 
