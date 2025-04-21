@@ -37,3 +37,8 @@ The current config:
 - Cross Entropy Loss
 - Trains on GPU if available, otherwise CPU
 
+
+
+# To-Do:
+I just implemented backprop for the pytorch network.
+Next step is to actually load this model and use it for predictions.
