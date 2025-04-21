@@ -1,6 +1,22 @@
+"""
+More things I should add:
+- Input validation for predict()
+    Could allow for more than tensors and just convert them into tensors.
+
+- Validation loop
+    The class only has the training loop and doesnt evaluate the model on a separate test.
+    This would be useful for to check if the model is learnign properly.
+
+-
+
+
+"""
+
+import os
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+import numpy as np
 
 
 class PytorchNeuralNetwork(nn.Module):
@@ -30,24 +46,29 @@ class PytorchNeuralNetwork(nn.Module):
         Forward pass through the network.
 
         Args:
-            x: Input tensor of shape (batch_size, input_size)
+            x: Input tensor that can be in multiple formats:
+            - Shape (784,) for a single flattened image
+            - Shape (batch_size, 784) for batched flattened images
+            - Shape (batch_size, 1, 28, 28) for batched MNIST images
 
         Returns:
             Output tensor of shape (batch_size, output_size)
         """
         # Ensure input has the right shape
         if x.dim() == 1:
-            x = x.unsqueeze(0)  # Add batch dimension if missing
+            x = x.unsqueeze(0)
+        elif x.dim() > 2:
+            x = x.view(x.size(0), -1)
 
         # First layer: Linear + ReLU activation
         x = F.relu(self.fc1(x))
 
-        # Output layer: Linear + Softmax activation
-        x = F.softmax(self.fc2(x), dim=1)
+        # Output layer: Linear
+        x = self.fc2(x)
 
         return x
 
-    def input(self, flattened_image):
+    def predict(self, vector: torch.Tensor):
         """
         Process a flattened image through the network.
 
@@ -57,11 +78,10 @@ class PytorchNeuralNetwork(nn.Module):
         Returns:
             A list of 10 probabilities corresponding to digits 0-9
         """
-        if isinstance(flattened_image, torch.Tensor):
-            input_tensor = flattened_image
+        if isinstance(vector, torch.Tensor):
+            input_tensor = vector
         else:
-            # Convert numpy array to tensor if needed
-            input_tensor = torch.tensor(flattened_image, dtype=torch.float32)
+            raise ValueError("Invalid input type")
 
         if input_tensor.shape[0] != 784:
             raise ValueError(
@@ -70,7 +90,99 @@ class PytorchNeuralNetwork(nn.Module):
 
         # Forward pass
         with torch.no_grad():
-            predictions = self.forward(input_tensor)
+            logits = self.forward(input_tensor)
+            predictions = F.softmax(logits, dim=1)
 
         # Return as a Python list
         return predictions.squeeze().tolist()
+
+    def training_loop(
+        self,
+        train_loader: torch.utils.data.DataLoader,
+        optimizer: torch.optim.Optimizer,
+        criterion: torch.nn.Module,
+        num_epochs: int,
+        device: torch.device,
+        save_frequency: int = 1,
+    ):
+        """
+        Trains the network on the training data.
+        Saves checkpoint after each epoch.
+
+        Args:
+            train_loader: DataLoader for the training data
+            optimizer: Optimizer for the training process
+            criterion: Loss function for the training process
+            num_epochs: Number of epochs to train the network
+            device: Device to train the network on
+            save_frequency: Frequency of saving checkpoints
+        """
+        self.to(device)
+        for epoch in range(num_epochs):
+            running_loss = 0.0
+            total_loss = 0.0
+            correct_guesses = 0
+            total_guesses = 0
+
+            self.train()
+
+            for batch_idx, (inputs, targets) in enumerate(train_loader):
+                inputs, targets = inputs.to(device), targets.to(device)
+
+                optimizer.zero_grad()
+                outputs = self(inputs)
+                loss = criterion(outputs, targets)
+                loss.backward()
+                optimizer.step()
+
+                loss_value = loss.item()
+                running_loss += loss.item()
+                total_loss += loss_value
+
+                _, predicted = torch.max(outputs.data, 1)
+                total_guesses += targets.size(0)
+                correct_guesses += predicted.eq(targets).sum().item()
+
+                if (batch_idx + 1) % 100 == 0:
+                    print(
+                        f"Epoch [{epoch+1}/{num_epochs}]\n"
+                        f"Step [{batch_idx+1}/{len(train_loader)}]\n"
+                        f"Batch Loss: {total_loss/100:.4f}\n"
+                        f"Batch Accuracy: {100 * correct_guesses/total_guesses:.2f}%\n"
+                    )
+                    running_loss = 0.0
+
+            epoch_loss = total_loss / len(train_loader)
+            epoch_accuracy = 100 * correct_guesses / total_guesses
+
+            print(
+                f"Epoch [{epoch+1}/{num_epochs}] completed\n"
+                f"Loss: {total_loss/100:.4f}\n"
+                f"Accuracy: {100 * correct_guesses/total_guesses:.2f}%\n"
+            )
+
+            if epoch % save_frequency == 0:
+                self.save_checkpoint(
+                    epoch, optimizer, epoch_loss, epoch_accuracy
+                )
+
+        print("Training complete!")
+
+    def save_checkpoint(
+        self, epoch, optimizer, loss, accuracy, dir="checkpoints"
+    ):
+        """
+        Saves a checkpoint of the model and optimizer state.
+        """
+        os.makedirs(dir, exist_ok=True)
+        checkpoint = {
+            "epoch": epoch,
+            "model_state_dict": self.state_dict(),
+            "optimizer_state_dict": optimizer.state_dict(),
+            "loss": loss,
+            "accuracy": accuracy,
+        }
+        torch.save(
+            checkpoint, os.path.join(dir, f"checkpoint_epoch_{epoch+1}.pth")
+        )
+        print(f"Checkpoint saved for epoch {epoch+1}")

@@ -1,5 +1,7 @@
 import numpy as np
 import torch
+from torch.utils.data import DataLoader
+from torchvision import datasets, transforms
 import os
 from typing import Dict
 
@@ -48,8 +50,7 @@ def get_image(
     # Define file paths
     base_dir = os.path.join(
         os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
-        "data",
-        "mnist_dataset",
+        "data/MNIST/MNIST/raw",
     )
     images_file = os.path.join(base_dir, "t10k-images-idx3-ubyte")
     labels_file = os.path.join(base_dir, "t10k-labels-idx1-ubyte")
@@ -63,6 +64,7 @@ def get_image(
         raise ValueError(f"No images found with label {n}")
     random_idx = np.random.choice(matching_indices)
     image = test_images[random_idx].astype(np.float32) / 255.0
+    image = (image - 0.5) / 0.5
 
     # Convert to PyTorch if needed
     if pytorch:
@@ -72,10 +74,7 @@ def get_image(
 
 
 def read_mnist_images(filename):
-    """
-    Read MNIST images from IDX file format
-    Returns
-    """
+    """Read MNIST images from IDX file format"""
     with open(filename, "rb") as f:
         magic = int.from_bytes(f.read(4), "big")
         if magic != 2051:
@@ -102,3 +101,22 @@ def read_mnist_labels(filename):
         buffer = f.read(num_items)
         labels = np.frombuffer(buffer, dtype=np.uint8)
         return labels
+
+
+def get_training_data():
+    """Gets the 60000 training images for the PyTorch network"""
+    transform = transforms.Compose(
+        [transforms.ToTensor(), transforms.Normalize((0.5,), (0.5,))]
+    )
+
+    train_dataset = datasets.MNIST(
+        root="./data/MNIST",
+        train=True,
+        download=True,
+        transform=transform,
+    )
+
+    # Divided into batches
+    train_loader = DataLoader(train_dataset, batch_size=64, shuffle=True)
+
+    return train_loader
