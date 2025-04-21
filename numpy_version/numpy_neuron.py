@@ -41,7 +41,7 @@ class NumpyNeuralNetwork:
 
         return output
 
-    def input(self, flattened_image: np.ndarray) -> list[float]:
+    def predict(self, flattened_image: np.ndarray) -> list[float]:
         """
         Process a flattened image through the network.
 
@@ -55,6 +55,18 @@ class NumpyNeuralNetwork:
             raise ValueError(
                 f"Expected input of size 784, got {flattened_image.shape[0]}"
             )
+
+        if flattened_image.min() < 0:
+            flattened_image = (flattened_image + 1) / 2
+            # This is just a quick fix.
+            # I initially used [0-1] as normalization range
+            # but has, since writing this method,
+            # moved on to [-1, 1] with the PyTorch network.
+            # Both networks reuse the same function to fetch data.
+            # I chose to stick with [-1, 1] for consistency.
+            # This means that I, ideally,  need to change how we
+            # expect the data in forward() instead.
+            # I will do this later, this should work for now.
 
         predictions = self.forward(flattened_image)
 

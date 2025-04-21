@@ -1,5 +1,5 @@
 from numpy_version.numpy_neuron import NumpyNeuralNetwork
-from data.image_getter import choose_number
+from data.mnist_loader import choose_number
 import numpy as np
 import os
 
@@ -7,7 +7,7 @@ import os
 def run_numpy_version():
     data = choose_number(numpy=True)
     network = NumpyNeuralNetwork()
-    output: list[float] = network.input(data["vector"])
+    output: list[float] = network.predict(data["vector"])
     print_output(output, data["number"])
 
 
