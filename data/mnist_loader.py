@@ -55,6 +55,14 @@ def get_image(
     images_file = os.path.join(base_dir, "t10k-images-idx3-ubyte")
     labels_file = os.path.join(base_dir, "t10k-labels-idx1-ubyte")
 
+    if not os.path.exists(images_file) or not os.path.exists(labels_file):
+        print("Dataset not found. Downloading...")
+        datasets.MNIST(
+            root="./data/MNIST",
+            train=False,
+            download=True,
+            transform=transforms.ToTensor(),
+        )
     test_images = read_mnist_images(images_file)
     test_labels = read_mnist_labels(labels_file)
 
@@ -75,6 +83,7 @@ def get_image(
 
 def read_mnist_images(filename):
     """Read MNIST images from IDX file format"""
+
     with open(filename, "rb") as f:
         magic = int.from_bytes(f.read(4), "big")
         if magic != 2051:

@@ -186,3 +186,13 @@ class PytorchNeuralNetwork(nn.Module):
             checkpoint, os.path.join(dir, f"checkpoint_epoch_{epoch+1}.pth")
         )
         print(f"Checkpoint saved for epoch {epoch+1}")
+
+    def load_checkpoint(self, checkpoint_path, device=None):
+        """"""
+        if device is None:
+            device = next(self.parameters()).device
+
+        checkpoint = torch.load(checkpoint_path, map_location=device)
+        self.load_state_dict(checkpoint["model_state_dict"])
+        print(f"Checkpoint loaded from {checkpoint_path}")
+        return checkpoint
