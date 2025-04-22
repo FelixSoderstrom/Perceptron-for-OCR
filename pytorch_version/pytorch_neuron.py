@@ -78,6 +78,8 @@ class PytorchNeuralNetwork(nn.Module):
         Returns:
             A list of 10 probabilities corresponding to digits 0-9
         """
+        self.eval()
+
         if isinstance(vector, torch.Tensor):
             input_tensor = vector
         else:
@@ -188,7 +190,12 @@ class PytorchNeuralNetwork(nn.Module):
         print(f"Checkpoint saved for epoch {epoch+1}")
 
     def load_checkpoint(self, checkpoint_path, device=None):
-        """"""
+        """
+        Load a saves checkckpoint into the model
+
+        Args:
+            checkpoint_path:
+        """
         if device is None:
             device = next(self.parameters()).device
 

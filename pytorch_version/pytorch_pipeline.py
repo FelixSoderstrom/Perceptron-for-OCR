@@ -5,10 +5,40 @@ import os
 
 
 def run_pytorch_version():
+    """
+    Runs the network if checkpoint exists.
+    """
+    checkpoint_exists()
+
     network = PytorchNeuralNetwork()
+    checkpoint_path = "checkpoints/checkpoint_epoch_10.pth"
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    network.to(device)
+    network.load_checkpoint(checkpoint_path, device)
+
     data = choose_number(pytorch=True)
-    output: list[float] = network.predict(data["vector"])
+    vector = data["vector"].to(device)
+    output: list[float] = network.predict(vector)
     print_output(output, data["number"])
+
+
+def checkpoint_exists():
+    """
+    Trains the model if the checkpoint does not exist.
+    """
+    if os.path.exists("checkpoints/checkpoint_epoch_10.pth"):
+        return True
+    else:
+        choice = input(
+            "No checkpoint found. Would you like to train the network? (y/n)"
+        )
+        if choice == "y":
+            print("Training the network...")
+            run_training()
+            return True
+        else:
+            print("Exiting...")
+            exit()
 
 
 def print_output(output: list[float], n: int):
@@ -23,7 +53,7 @@ def print_output(output: list[float], n: int):
     print("\nNumber:   Probability:    Full output:")
 
     highest = max(output)
-    regular = "{0}        {1:8.4f}%        {2}"
+    regular = "{0}        {1:8.4f}%        {2:.4e}"
 
     for i, o in enumerate(output):
         p = o * 100  # Percentage

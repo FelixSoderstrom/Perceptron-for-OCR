@@ -2,8 +2,6 @@ from single_neuron.single_pipeline import run_single_neuron_version
 from numpy_version.numpy_pipeline import run_numpy_version
 from pytorch_version.pytorch_pipeline import run_pytorch_version
 
-grey_ascii_sequence = "\033[90m"
-
 
 def main():
     print("=" * 49)
@@ -15,7 +13,7 @@ def main():
     print("=" * 49)
     print(
         "\n\033[90m"
-        "In this project I have built three separate implementations of \n"
+        "On this branch I have built three separate implementations of \n"
         "artificial neurons/networks with increasing complexity to ultimately \n"
         "identify handwritten numbers (the MNIST dataset).\033[0m\n"
     )
