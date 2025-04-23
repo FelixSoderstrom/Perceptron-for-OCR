@@ -1,9 +1,9 @@
 import numpy as np
 import torch
-from torch.utils.data import DataLoader
+from torch.utils.data import DataLoader, random_split
 from torchvision import datasets, transforms
 import os
-from typing import Dict
+from typing import Dict, Tuple
 
 
 def choose_number(
@@ -112,20 +112,51 @@ def read_mnist_labels(filename):
         return labels
 
 
-def get_training_data():
-    """Gets the 60000 training images for the PyTorch network"""
+def get_dataloaders(
+    batch_size=64, val_split=0.2
+) -> Tuple[DataLoader, DataLoader]:
+    """Gets and splits the MNIST training data into training and validation DataLoaders."""
     transform = transforms.Compose(
         [transforms.ToTensor(), transforms.Normalize((0.5,), (0.5,))]
     )
 
-    train_dataset = datasets.MNIST(
+    # Load the full training dataset
+    full_train_dataset = datasets.MNIST(
         root="./data/MNIST",
         train=True,
         download=True,
         transform=transform,
     )
 
-    # Divided into batches
-    train_loader = DataLoader(train_dataset, batch_size=64, shuffle=True)
+    # Calculate split sizes
+    total_size = len(full_train_dataset)
+    val_size = int(total_size * val_split)
+    train_size = total_size - val_size
 
-    return train_loader
+    # Split the dataset
+    # Use a fixed generator for reproducibility if desired
+    generator = torch.Generator().manual_seed(42)
+    train_dataset, val_dataset = random_split(
+        full_train_dataset, [train_size, val_size], generator=generator
+    )
+
+    # Create DataLoaders
+    train_loader = DataLoader(
+        train_dataset,
+        batch_size=batch_size,
+        shuffle=True,
+        num_workers=4,
+        pin_memory=True,
+    )
+    val_loader = DataLoader(
+        val_dataset,
+        batch_size=batch_size * 2,
+        shuffle=False,
+        num_workers=4,
+        pin_memory=True,
+    )
+
+    print(
+        f"Dataset split: {train_size} training samples, {val_size} validation samples."
+    )
+    return train_loader, val_loader
