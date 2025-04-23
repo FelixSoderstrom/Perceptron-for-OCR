@@ -9,37 +9,34 @@ We start out small with a single neuron built in a basic python class.
 We end up with a neural network that can solve the "Hello World" of machine learning!
 
 
-## Part 1 (branch: part-1)
+## Part 2 (branch: part-2)
 
-### Single Neuron
+### Optimizing
 
-Class that represents a single neuron.
-Upon instantialization, the neuron will automatically set random weights and bias.
-The neuron defaults to sigmoid activation but covers relu, leaky relu and tanh aswell.
-When using the main/pipeline scripts, all activations will be outputted on the same instance.
-While we could indeed do machine learning on a single neuron, it wouldnt be able to tell me what digit it is.
-It could only tell me if the inputted image was the number we trained it on.
-This is why I wont be applying any form of back propagation to this version.
-But I might come back and do that actually, just because it seems like a really dumb thing to do!
+On this branch I try to optimize the performance of the model.
+Just chasing the highest accuracy score would lead to us choosing a model that has been overfitted and memorized the dataset.
+We need to pick something slightly before the peak of the curve.
+To do this I decided to use tools such as PyTorch Lightning and WandB.
 
-### Numpy
+WandB allows me to view metrics in the browser and compare checkpoints.
+In combination with PyTorch Lightning I automatically save a checkpoint both locally and to cloud once a training run is completed.
 
-This, like the single neuron class, is a basic implementation of a perceptron.
-This class however is a network consisting of several layers that represents the flattened image.
-This class therefore takes a test image from the dataset as an input for prediction.
-Since the network is not learned it will more or less output random numbers.
-But this implementation shows that the image passes through the network and comes out as a prediction.
 
-### PyTorch
+### How do we determine the best model?
 
-This implementation takes the previous numpy implementation and converts it into a pytorch model.
-We still feed it one image from the test set and the model spits out a prediction.
-The difference here is that this version allows for backprop and can actually learn.
-The program comes with a pre-learned model. To re-learn the model, delete the '/checkpoints/checkpoint_epoch_10.pth' file and then simply run 'python main.py' in the terminal.
-All variables for the machine learning process are configurable through the 'pytorch_pipeline.py' file.
-The current config:
-- 10 Epochs
-- ADAM Optimizer
-- 0.001 Learning Rate
-- Cross Entropy Loss
-- Prioritizes GPU usage
+By default we are now testing out 20 epochs (this might change later as i keep testing).
+We split up the dataset into training and validation (48k and 12k images respectively).
+Once an epoch has finished training on the 48k images, we validate it against the remaining 12k images.
+During the entire training process we keep track of which epoch scored the highest on the validation set.
+If the next epoch scores higher, we save it and delete the previous one.
+We do this 20 times and at the end we are left with the single best performing model.
+
+We then compare these highest scoring models in WandB to pick the best one manually.
+We could arguably create a script that picks the one with the highest score but the metrics are right there in front of us in the UI.
+It's also a good learning experience to interpret these metrics visually.
+
+
+### The current version
+
+
+

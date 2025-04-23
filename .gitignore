@@ -4,13 +4,6 @@
 pycache
 __pycache__
 assignment.md
-/checkpoints/checkpoint_epoch_1.pth
-/checkpoints/checkpoint_epoch_2.pth
-/checkpoints/checkpoint_epoch_3.pth
-/checkpoints/checkpoint_epoch_4.pth
-/checkpoints/checkpoint_epoch_5.pth
-/checkpoints/checkpoint_epoch_6.pth
-/checkpoints/checkpoint_epoch_7.pth
-/checkpoints/checkpoint_epoch_8.pth
-/checkpoints/checkpoint_epoch_9.pth
 /data/MNIST
+pytorch-mnist-ocr
+wandb
