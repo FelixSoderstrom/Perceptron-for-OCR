@@ -28,24 +28,63 @@ class PytorchNeuralNetwork(pl.LightningModule):
         hidden_size=128,
         output_size=10,
         learning_rate=1e-3,
+        conv_channels1=32,  # Number of filters in first conv layer
+        conv_channels2=64,  # Number of filters in second conv layer
+        kernel_size=3,  # Filter size for convolutions
+        fc_size=128,  # Size of the fully connected layer after convolutions
     ):
         """
-        Initialize a simple neural network with one hidden layer.
+        Initialize a convolutional neural network for image classification.
 
         Args:
             input_size: Size of the input (784 for MNIST flattened images)
-            hidden_size: Size of the hidden layer
+            hidden_size: Size of the hidden layer (kept for compatibility)
             output_size: Size of the output layer (10 for digits 0-9)
             learning_rate: Learning rate for the optimizer
+            conv_channels1: Number of filters in first convolutional layer
+            conv_channels2: Number of filters in second convolutional layer
+            kernel_size: Size of the convolutional kernel
+            fc_size: Size of the fully connected layer after convolutions
         """
         super().__init__()
 
         # Save hyperparameters
         self.save_hyperparameters()
 
-        # Define the layers
-        self.fc1 = nn.Linear(input_size, hidden_size)
-        self.fc2 = nn.Linear(hidden_size, output_size)
+        # Define the convolutional layers
+        # First conv layer: 1 input channel (grayscale) -> conv_channels1 output channels
+        self.conv1 = nn.Conv2d(
+            in_channels=1,
+            out_channels=conv_channels1,
+            kernel_size=kernel_size,
+            padding=1,
+        )
+        # Batch normalization after first conv layer
+        self.bn1 = nn.BatchNorm2d(conv_channels1)
+        # MaxPooling layer to reduce spatial dimensions
+        self.pool = nn.MaxPool2d(kernel_size=2, stride=2)
+
+        # Second conv layer: conv_channels1 input channels -> conv_channels2 output channels
+        self.conv2 = nn.Conv2d(
+            in_channels=conv_channels1,
+            out_channels=conv_channels2,
+            kernel_size=kernel_size,
+            padding=1,
+        )
+        # Batch normalization after second conv layer
+        self.bn2 = nn.BatchNorm2d(conv_channels2)
+
+        # Calculate the size of the flattened features after convolutions and pooling
+        # 28x28 -> after first conv+pool -> 14x14 -> after second conv+pool -> 7x7
+        # So the flattened size will be 7*7*conv_channels2
+        self.flat_size = 7 * 7 * conv_channels2
+
+        # Fully connected layers
+        self.fc1 = nn.Linear(self.flat_size, fc_size)
+        self.fc2 = nn.Linear(fc_size, output_size)
+
+        # Dropout for regularization
+        self.dropout = nn.Dropout(0.25)
 
         # Define loss function
         self.criterion = nn.CrossEntropyLoss()
@@ -53,11 +92,22 @@ class PytorchNeuralNetwork(pl.LightningModule):
         # Define metric
         self.accuracy = Accuracy(task="multiclass", num_classes=output_size)
 
-        # Initialize weights similar to the NumPy version
-        nn.init.xavier_normal_(self.fc1.weight)
-        nn.init.zeros_(self.fc1.bias)
-        nn.init.xavier_normal_(self.fc2.weight)
-        nn.init.zeros_(self.fc2.bias)
+        # Initialize weights
+        self._initialize_weights()
+
+    def _initialize_weights(self):
+        """Initialize weights using Xavier (Glorot) initialization"""
+        for m in self.modules():
+            if isinstance(m, nn.Conv2d):
+                nn.init.xavier_normal_(m.weight)
+                if m.bias is not None:
+                    nn.init.zeros_(m.bias)
+            elif isinstance(m, nn.BatchNorm2d):
+                nn.init.constant_(m.weight, 1)
+                nn.init.constant_(m.bias, 0)
+            elif isinstance(m, nn.Linear):
+                nn.init.xavier_normal_(m.weight)
+                nn.init.zeros_(m.bias)
 
     def forward(self, x):
         """
@@ -74,18 +124,38 @@ class PytorchNeuralNetwork(pl.LightningModule):
         """
         # Ensure input has the right shape
         if x.dim() == 1:
-            x = x.unsqueeze(0)
+            # Single flattened image, reshape to [1, 1, 28, 28]
+            x = x.view(1, 1, 28, 28)
+        elif x.dim() == 2:
+            # Batch of flattened images, reshape to [batch_size, 1, 28, 28]
+            batch_size = x.size(0)
+            x = x.view(batch_size, 1, 28, 28)
         elif x.dim() == 4 and x.size(1) == 1:
-            x = x.view(x.size(0), -1)
-        elif x.dim() == 2 and x.size(1) == 784:
+            # Already in the correct format [batch_size, 1, 28, 28]
             pass
         else:
             raise ValueError(f"Unexpected input tensor shape: {x.shape}")
 
-        # First layer: Linear + ReLU activation
-        x = F.relu(self.fc1(x))
+        # First convolutional layer: Conv2d -> BatchNorm -> ReLU -> MaxPool
+        x = self.conv1(x)  # Apply convolution
+        x = self.bn1(x)  # Apply batch normalization
+        x = F.relu(x)  # Apply ReLU activation
+        x = self.pool(x)  # Apply max pooling
 
-        # Output layer: Linear
+        # Second convolutional layer: Conv2d -> BatchNorm -> ReLU -> MaxPool
+        x = self.conv2(x)  # Apply convolution
+        x = self.bn2(x)  # Apply batch normalization
+        x = F.relu(x)  # Apply ReLU activation
+        x = self.pool(x)  # Apply max pooling
+
+        # Flatten the output for the fully connected layers
+        x = x.view(x.size(0), -1)
+
+        # First fully connected layer with dropout
+        x = F.relu(self.fc1(x))
+        x = self.dropout(x)
+
+        # Output layer
         x = self.fc2(x)
 
         return x
@@ -149,7 +219,9 @@ class PytorchNeuralNetwork(pl.LightningModule):
     def configure_optimizers(self):
         """Configures the optimizer."""
         optimizer = torch.optim.Adam(
-            self.parameters(), lr=self.hparams.learning_rate
+            self.parameters(),
+            lr=self.hparams.learning_rate,
+            weight_decay=1e-5,  # Added weight decay for regularization
         )
         return optimizer
 

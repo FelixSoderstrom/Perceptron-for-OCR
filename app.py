@@ -4,6 +4,9 @@ import numpy as np
 import matplotlib.pyplot as plt
 import os
 import glob
+import time
+from torch.utils.data import DataLoader, TensorDataset
+from torchvision import datasets, transforms
 
 st.set_page_config(layout="wide")
 
@@ -130,11 +133,255 @@ def process_digit(number, network, device):
             st.session_state.processing = False
 
 
+def load_mnist_test_dataset(batch_size=100):
+    """
+    Load the MNIST test dataset using torchvision.
+
+    Args:
+        batch_size (int): The batch size for the DataLoader
+
+    Returns:
+        DataLoader: A DataLoader for the MNIST test dataset
+    """
+    # Define normalization transform to match our training (-0.5, 0.5)
+    transform = transforms.Compose(
+        [transforms.ToTensor(), transforms.Normalize((0.5,), (0.5,))]
+    )
+
+    # Load the test dataset
+    test_dataset = datasets.MNIST(
+        root="./data/MNIST", train=False, download=True, transform=transform
+    )
+
+    # Create DataLoader
+    test_loader = DataLoader(
+        test_dataset,
+        batch_size=batch_size,
+        shuffle=False,
+        num_workers=4,
+        pin_memory=True,
+    )
+
+    return test_loader
+
+
+def run_benchmark(network, device, batch_size=100):
+    """
+    Run benchmark on all MNIST test images and return accuracy metrics.
+
+    Args:
+        network: The neural network model
+        device: Device to run the benchmark on ('cpu' or 'cuda')
+        batch_size: Batch size for processing test images
+
+    Returns:
+        dict: Dictionary containing benchmark results
+    """
+    try:
+        device_obj = torch.device(device)
+        network.to(device_obj)
+        network.eval()
+
+        # Load test dataset
+        test_loader = load_mnist_test_dataset(batch_size)
+
+        total_samples = 0
+        correct_predictions = 0
+        confusion_matrix = np.zeros((10, 10), dtype=int)
+        class_correct = np.zeros(10)
+        class_total = np.zeros(10)
+
+        # Create progress bar once
+        progress_bar = st.progress(0)
+        progress_text = st.empty()
+        progress_text.text("Preparing to benchmark...")
+
+        start_time = time.time()
+
+        with torch.no_grad():
+            for batch_idx, (images, labels) in enumerate(test_loader):
+                # Update progress
+                progress = (batch_idx + 1) / len(test_loader)
+                progress_bar.progress(progress)
+                progress_text.text(
+                    f"Processing batch {batch_idx+1}/{len(test_loader)} ({progress*100:.1f}%)"
+                )
+
+                # Move tensors to the device
+                images = images.to(device_obj)
+                labels = labels.to(device_obj)
+
+                # Forward pass
+                outputs = network(images)
+
+                # Get predictions
+                _, predicted = torch.max(outputs, 1)
+
+                # Update counters
+                total_samples += labels.size(0)
+                correct_predictions += (predicted == labels).sum().item()
+
+                # Update confusion matrix
+                for i in range(labels.size(0)):
+                    confusion_matrix[labels[i].item()][
+                        predicted[i].item()
+                    ] += 1
+
+                # Update per-class accuracy
+                for i in range(10):
+                    mask = labels == i
+                    class_correct[i] += (predicted[mask] == i).sum().item()
+                    class_total[i] += mask.sum().item()
+
+        end_time = time.time()
+        inference_time = end_time - start_time
+
+        # Clear progress indicators
+        progress_text.empty()
+
+        # Calculate metrics
+        overall_accuracy = 100 * correct_predictions / total_samples
+        per_class_accuracy = np.zeros(10)
+        for i in range(10):
+            per_class_accuracy[i] = (
+                100 * class_correct[i] / class_total[i]
+                if class_total[i] > 0
+                else 0
+            )
+
+        # Return results
+        return {
+            "overall_accuracy": overall_accuracy,
+            "per_class_accuracy": per_class_accuracy,
+            "confusion_matrix": confusion_matrix,
+            "total_samples": total_samples,
+            "inference_time": inference_time,
+        }
+    except Exception as e:
+        st.error(f"Error running benchmark: {str(e)}")
+        return None
+
+
+def display_benchmark_results(results):
+    """
+    Display benchmark results in a formatted way.
+
+    Args:
+        results (dict): Dictionary containing benchmark results
+    """
+    if not results:
+        return
+
+    st.subheader("Benchmark Results")
+
+    # Calculate additional metrics
+    per_class_accuracy = results["per_class_accuracy"]
+    confusion_matrix = results["confusion_matrix"]
+
+    # Find most correctly and incorrectly guessed digits
+    most_correct_digit = int(np.argmax(per_class_accuracy))
+    most_correct_accuracy = per_class_accuracy[most_correct_digit]
+
+    # Calculate error rates for each digit (100 - accuracy)
+    error_rates = 100 - per_class_accuracy
+    most_incorrect_digit = int(np.argmax(error_rates))
+    most_incorrect_error = error_rates[most_incorrect_digit]
+
+    # Calculate overall error percentage
+    overall_error = 100 - results["overall_accuracy"]
+
+    # Create a layout with metrics on the left, confusion matrix on the right
+    metrics_col, matrix_col = st.columns([1, 2])
+
+    with metrics_col:
+        # Add some spacing at the top to align better with the confusion matrix title
+        st.markdown("<br>", unsafe_allow_html=True)
+
+        # First metric
+        st.metric("Overall Accuracy", f"{results['overall_accuracy']:.2f}%")
+
+        # Add spacing between metrics
+        st.markdown(
+            "<div style='margin-top: 25px;'></div>", unsafe_allow_html=True
+        )
+
+        # Second metric
+        st.metric("Error Rate", f"{overall_error:.2f}%")
+
+        # Add spacing between metrics
+        st.markdown(
+            "<div style='margin-top: 25px;'></div>", unsafe_allow_html=True
+        )
+
+        # Third metric
+        st.metric(
+            "Best Recognized Digit",
+            f"{most_correct_digit} ({most_correct_accuracy:.2f}%)",
+        )
+
+        # Add spacing between metrics
+        st.markdown(
+            "<div style='margin-top: 25px;'></div>", unsafe_allow_html=True
+        )
+
+        # Fourth metric
+        st.metric(
+            "Most Confused Digit",
+            f"{most_incorrect_digit} ({most_incorrect_error:.2f}% error)",
+        )
+
+    with matrix_col:
+        # Display confusion matrix
+        st.subheader("Confusion Matrix")
+        # Let confusion matrix use the full width of its column
+        fig = plt.figure(figsize=(8, 6))
+        ax = fig.add_subplot(111)
+        cax = ax.matshow(results["confusion_matrix"], cmap="Blues")
+        fig.colorbar(cax)
+
+        # Set labels
+        ax.set_xlabel("Predicted")
+        ax.set_ylabel("True")
+        ax.set_title("Confusion Matrix")
+
+        # Set ticks
+        ax.set_xticks(np.arange(10))
+        ax.set_yticks(np.arange(10))
+        ax.set_xticklabels(np.arange(10))
+        ax.set_yticklabels(np.arange(10))
+
+        # Add text annotations
+        for i in range(10):
+            for j in range(10):
+                text_color = (
+                    "white"
+                    if results["confusion_matrix"][i, j]
+                    > results["confusion_matrix"].max() / 2
+                    else "black"
+                )
+                ax.text(
+                    j,
+                    i,
+                    results["confusion_matrix"][i, j],
+                    ha="center",
+                    va="center",
+                    color=text_color,
+                    fontsize=9,
+                )
+
+        st.pyplot(fig)
+
+        # Add explanation of confusion matrix
+        st.caption(
+            "Confusion Matrix: Rows represent true digits, columns represent predicted digits."
+        )
+
+
 def main():
     left_spacer, main_col, right_spacer = st.columns([1, 3, 1])
 
     with main_col:
-        st.title("Neural Network MNIST Digit Classifier (Lightning + WandB)")
+        st.title("Neural Network MNIST Digit Classifier")
         st.write("By Felix Söderström")
         # Get checkpoints from the fixed ./checkpoints/ directory
         available_checkpoints = (
@@ -257,6 +504,30 @@ def main():
         ):
             st.session_state.processing = True
             process_digit(9, network, device)
+
+        st.divider()
+
+        # Add benchmark button
+        st.subheader("Benchmark on Test Dataset")
+        st.write(
+            "Run a benchmark on all 10,000 MNIST test images to evaluate model performance."
+        )
+
+        if st.button(
+            "Run Benchmark",
+            disabled=st.session_state.processing,
+            key="btn_benchmark",
+        ):
+            st.session_state.processing = True
+            with st.spinner(
+                "Running benchmark on all 10,000 MNIST test images..."
+            ):
+                benchmark_results = run_benchmark(network, device)
+
+                if benchmark_results:
+                    display_benchmark_results(benchmark_results)
+
+            st.session_state.processing = False
 
         if st.session_state.processing:
             st.info("Processing... Please wait")

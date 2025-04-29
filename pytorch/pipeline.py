@@ -132,7 +132,7 @@ def find_best_model_checkpoint(
     return best_ckpt_path
 
 
-def run_training(max_epochs=20):
+def run_training(max_epochs=40):
     """Trains the network using PyTorch Lightning, WandB, and ModelCheckpoint."""
     print(
         f"Starting training for {max_epochs} epochs with PyTorch Lightning, WandB, and ModelCheckpoint..."
@@ -157,7 +157,7 @@ def run_training(max_epochs=20):
         monitor="val_acc",
         mode="max",
         save_top_k=1,
-        filename=f"{run_name}-epoch-{{epoch}}-val_acc-{{val_acc:.4f}}",
+        filename=f"{run_name}-{{epoch}}-{{val_acc:.4f}}",
     )
 
     accelerator = "gpu" if torch.cuda.is_available() else "cpu"
