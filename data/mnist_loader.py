@@ -1,6 +1,6 @@
 import numpy as np
 import torch
-from torch.utils.data import DataLoader, random_split
+from torch.utils.data import DataLoader, random_split, Dataset
 from torchvision import datasets, transforms
 import os
 from typing import Dict, Tuple
@@ -112,33 +112,71 @@ def read_mnist_labels(filename):
         return labels
 
 
+class TransformedSubset(Dataset):
+    """Dataset wrapper that applies a transform to a subset of another dataset."""
+
+    def __init__(self, subset, transform=None):
+        self.subset = subset
+        self.transform = transform
+
+    def __getitem__(self, idx):
+        x, y = self.subset[idx]
+        if self.transform:
+            x = self.transform(x)
+        return x, y
+
+    def __len__(self):
+        return len(self.subset)
+
+
 def get_dataloaders(
-    batch_size=64, val_split=0.2
+    batch_size=64,
+    val_split=0.1667,  # ~10k out of 60k is about 16.67%
 ) -> Tuple[DataLoader, DataLoader]:
     """Gets and splits the MNIST training data into training and validation DataLoaders."""
-    transform = transforms.Compose(
-        [transforms.ToTensor(), transforms.Normalize((0.5,), (0.5,))]
-    )
 
-    # Load the full training dataset
-    full_train_dataset = datasets.MNIST(
+    # Define the base transform that converts PIL images to tensors (no normalization yet)
+    base_transform = transforms.ToTensor()
+
+    # Load the full training dataset with just the base transform
+    full_dataset = datasets.MNIST(
         root="./data/MNIST",
         train=True,
         download=True,
-        transform=transform,
+        transform=base_transform,
     )
 
     # Calculate split sizes
-    total_size = len(full_train_dataset)
+    total_size = len(full_dataset)
     val_size = int(total_size * val_split)
     train_size = total_size - val_size
 
     # Split the dataset
-    # Use a fixed generator for reproducibility if desired
-    generator = torch.Generator().manual_seed(42)
-    train_dataset, val_dataset = random_split(
-        full_train_dataset, [train_size, val_size], generator=generator
+    generator = torch.Generator().manual_seed(42)  # For reproducibility
+    train_subset, val_subset = random_split(
+        full_dataset, [train_size, val_size], generator=generator
     )
+
+    # Define the augmentation transforms for training data
+    train_transform = transforms.Compose(
+        [
+            # These transforms expect tensor input (since we already called ToTensor)
+            transforms.RandomAffine(
+                degrees=10, translate=(0.1, 0.1), scale=(0.85, 1.05)
+            ),
+            transforms.ElasticTransform(alpha=50.0, sigma=5.0),
+            transforms.ColorJitter(brightness=0.2, contrast=0.2),
+            # Normalize at the end
+            transforms.Normalize((0.5,), (0.5,)),
+        ]
+    )
+
+    # Define transform for validation data (just normalization)
+    val_transform = transforms.Normalize((0.5,), (0.5,))
+
+    # Create wrapped datasets with appropriate transforms
+    train_dataset = TransformedSubset(train_subset, train_transform)
+    val_dataset = TransformedSubset(val_subset, val_transform)
 
     # Create DataLoaders
     train_loader = DataLoader(
@@ -150,13 +188,15 @@ def get_dataloaders(
     )
     val_loader = DataLoader(
         val_dataset,
-        batch_size=batch_size * 2,
+        batch_size=batch_size
+        * 2,  # Often use larger batch size for validation
         shuffle=False,
         num_workers=4,
         pin_memory=True,
     )
 
     print(
-        f"Dataset split: {train_size} training samples, {val_size} validation samples."
+        f"Dataset split: {train_size} training samples (with augmentation), "
+        f"{val_size} validation samples (no augmentation)."
     )
     return train_loader, val_loader

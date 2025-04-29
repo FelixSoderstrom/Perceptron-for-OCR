@@ -7,6 +7,7 @@ from pytorch_lightning.loggers import WandbLogger
 from pytorch_lightning.callbacks import ModelCheckpoint
 import glob
 import wandb
+import time
 
 
 def pipeline():
@@ -143,11 +144,20 @@ def run_training(max_epochs=20):
     wandb_logger = WandbLogger(project="pytorch-mnist-ocr", log_model=True)
     wandb_logger.watch(network, log="all")
 
+    # Get the WandB run name after the logger is initialized
+    # Wait a moment for the run to be properly initialized
+    time.sleep(1)
+
+    # Get the run name (like "dazzling-violet-2")
+    run_name = wandb.run.name
+    print(f"WandB run name: {run_name}")
+
+    # Include the run name in the checkpoint filename
     checkpoint_callback = ModelCheckpoint(
         monitor="val_acc",
         mode="max",
         save_top_k=1,
-        filename="best-checkpoint-{epoch}-{val_acc:.4f}",
+        filename=f"{run_name}-epoch-{{epoch}}-val_acc-{{val_acc:.4f}}",
     )
 
     accelerator = "gpu" if torch.cuda.is_available() else "cpu"

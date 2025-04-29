@@ -11,6 +11,13 @@ We end up with a neural network that can solve the "Hello World" of machine lear
 
 ## Part 2 (branch: part-2)
 
+### Significant changes made and their impact on the accuracy score:
+First model: ~98.2%
+Increase to 20 epochs: ~98.1% (epochs 15-17 seem to be right before peak)
+Dataset splitting and validating: ~97.1%
+Data augmentation: ~96.3%
+
+
 ### Optimizing
 
 On this branch I try to optimize the performance of the model.
@@ -36,7 +43,22 @@ We could arguably create a script that picks the one with the highest score but 
 It's also a good learning experience to interpret these metrics visually.
 
 
-### The current version
+### Data augmentation
+
+I implemented augmentation to the dataset.
+Types of augmentation being used:
+- RandomAffine: Rotation, translation and scaling.
+- ElasticTransform: Deformations of the image.
+- ColorJitter: Brightness, contrast and saturation.
+
+Notable is that the accuracy score dropped with almost 1% after implementing data augmentation.
+This highly suggests that the previous models were slightly overfit.
+Previously we tried to anticipate overfitting by keeping track of the accuracy by splitting the dataset and running validation on 10k of the images.
+We kept the best performing epoch as out checkpoint based on this metric. It might have been better to atually keep the epoch prior to the highest performing one.
+Im going into the next phase with a new mindset and will treat this decrease with 1% as a good thing.
+
+
+
 
 
 
