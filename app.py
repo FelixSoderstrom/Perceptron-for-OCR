@@ -386,7 +386,7 @@ def main():
         # Get checkpoints from the fixed ./checkpoints/ directory
         available_checkpoints = (
             get_checkpoint_files()
-        )  # Gets full paths from ./checkpoints/
+        )  # Gets full paths from ./checkpoina<ts/
 
         if not available_checkpoints:
             st.error(

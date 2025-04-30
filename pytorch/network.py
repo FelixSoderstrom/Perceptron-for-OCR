@@ -28,8 +28,9 @@ class PytorchNeuralNetwork(pl.LightningModule):
         hidden_size=128,
         output_size=10,
         learning_rate=1e-3,
-        conv_channels1=32,  # Number of filters in first conv layer
-        conv_channels2=64,  # Number of filters in second conv layer
+        conv_channels1=64,  # Number of filters in first conv layer (increased from 32)
+        conv_channels2=128,  # Number of filters in second conv layer (increased from 64)
+        conv_channels3=256,  # Number of filters in third conv layer (new)
         kernel_size=3,  # Filter size for convolutions
         fc_size=128,  # Size of the fully connected layer after convolutions
     ):
@@ -43,6 +44,7 @@ class PytorchNeuralNetwork(pl.LightningModule):
             learning_rate: Learning rate for the optimizer
             conv_channels1: Number of filters in first convolutional layer
             conv_channels2: Number of filters in second convolutional layer
+            conv_channels3: Number of filters in third convolutional layer
             kernel_size: Size of the convolutional kernel
             fc_size: Size of the fully connected layer after convolutions
         """
@@ -74,17 +76,27 @@ class PytorchNeuralNetwork(pl.LightningModule):
         # Batch normalization after second conv layer
         self.bn2 = nn.BatchNorm2d(conv_channels2)
 
+        # Third conv layer: conv_channels2 input channels -> conv_channels3 output channels
+        self.conv3 = nn.Conv2d(
+            in_channels=conv_channels2,
+            out_channels=conv_channels3,
+            kernel_size=kernel_size,
+            padding=1,
+        )
+        # Batch normalization after third conv layer
+        self.bn3 = nn.BatchNorm2d(conv_channels3)
+
         # Calculate the size of the flattened features after convolutions and pooling
-        # 28x28 -> after first conv+pool -> 14x14 -> after second conv+pool -> 7x7
-        # So the flattened size will be 7*7*conv_channels2
-        self.flat_size = 7 * 7 * conv_channels2
+        # 28x28 -> after first conv+pool -> 14x14 -> after second conv+pool -> 7x7 -> after third conv+pool -> 3x3
+        # So the flattened size will be 3*3*conv_channels3
+        self.flat_size = 3 * 3 * conv_channels3
 
         # Fully connected layers
         self.fc1 = nn.Linear(self.flat_size, fc_size)
         self.fc2 = nn.Linear(fc_size, output_size)
 
         # Dropout for regularization
-        self.dropout = nn.Dropout(0.25)
+        self.dropout = nn.Dropout(0.3)
 
         # Define loss function
         self.criterion = nn.CrossEntropyLoss()
@@ -145,6 +157,12 @@ class PytorchNeuralNetwork(pl.LightningModule):
         # Second convolutional layer: Conv2d -> BatchNorm -> ReLU -> MaxPool
         x = self.conv2(x)  # Apply convolution
         x = self.bn2(x)  # Apply batch normalization
+        x = F.relu(x)  # Apply ReLU activation
+        x = self.pool(x)  # Apply max pooling
+
+        # Third convolutional layer: Conv2d -> BatchNorm -> ReLU -> MaxPool
+        x = self.conv3(x)  # Apply convolution
+        x = self.bn3(x)  # Apply batch normalization
         x = F.relu(x)  # Apply ReLU activation
         x = self.pool(x)  # Apply max pooling
 
@@ -217,13 +235,36 @@ class PytorchNeuralNetwork(pl.LightningModule):
         return loss  # You can return whatever you want, often the loss
 
     def configure_optimizers(self):
-        """Configures the optimizer."""
+        """Configures the optimizer and learning rate scheduler."""
         optimizer = torch.optim.Adam(
             self.parameters(),
             lr=self.hparams.learning_rate,
-            weight_decay=1e-5,  # Added weight decay for regularization
+            weight_decay=5e-6,
         )
-        return optimizer
+
+        # Add learning rate scheduler that reduces LR when validation accuracy plateaus
+        scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
+            optimizer,
+            mode="max",  # Since we're monitoring accuracy (higher is better)
+            factor=0.5,  # Multiply LR by this factor when reducing
+            patience=3,  # Number of epochs with no improvement after which LR will be reduced
+            verbose=True,  # Print message when LR is reduced
+            min_lr=1e-6,  # Lower bound on the learning rate
+            threshold=0.0001,  # Minimum change to qualify as an improvement
+            threshold_mode="rel",  # Interpret threshold as relative change
+        )
+
+        # Return both optimizer and scheduler in the format PyTorch Lightning expects
+        return {
+            "optimizer": optimizer,
+            "lr_scheduler": {
+                "scheduler": scheduler,
+                "monitor": "val_acc",  # The metric to monitor for plateau detection
+                "interval": "epoch",  # The scheduler updates after each epoch
+                "frequency": 1,  # Update the scheduler every epoch
+                "strict": False,  # Don't crash if the monitored metric is missing
+            },
+        }
 
     def predict(self, vector: torch.Tensor):
         """

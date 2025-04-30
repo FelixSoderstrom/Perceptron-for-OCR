@@ -134,6 +134,9 @@ def find_best_model_checkpoint(
 
 def run_training(max_epochs=40):
     """Trains the network using PyTorch Lightning, WandB, and ModelCheckpoint."""
+    # Enable tensor core optimization for NVIDIA GPUs (RTX 3090)
+    torch.set_float32_matmul_precision("high")
+
     print(
         f"Starting training for {max_epochs} epochs with PyTorch Lightning, WandB, and ModelCheckpoint..."
     )

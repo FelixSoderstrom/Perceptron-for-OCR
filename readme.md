@@ -2,11 +2,28 @@
 
 ### Overview
 This repository holds the entire perceptron project.
-The plan is to build a neural network that can identify handwritten digits (the MNIST dataset).
-In order to reach the final level of this project it has been divided into three parts.
-Each part representing an increase in complexity with their own respective branch.
-We start out small with a single neuron built in a basic python class.
-We end up with a neural network that can solve the "Hello World" of machine learning!
+I have as of today been programming for little over a year now (7 months in python) and now is the first time I get to play around with deep learning!
+We are taking this step by step and starting off with a single neuron, at the end we will have a (hopefully) very optimized neural network for the MNIST dataset.
+Yes, it's the hello world of machine learning and a great place to start.
+There is also a leaderboard online that keeps me motivated to min-max every aspect of this project.
+
+The project is divided into 2 parts (branches) and even smaller steps within those parts (commits).
+
+
+## Part 1 (branch: part-1)
+
+You are currently on branch: part-2 and can not view the contents of part-1.
+Here is a brief summary of what happened in part-1:
+- I built a single neuron as a python class.
+    The neuron was mostly a random number generator but demonstrates how a single neuron in a neural network works.
+
+- I built a network in NumPy.
+    This version took in the flattened data from a single image in the dataset and processed the information through 3 layers.
+    This version did not include backprop so arguably, this was a 784-dimensional random number generator.
+
+- I built the same network in PyTorch.
+    This version also took in the flattened image and passed it along all layers, btu this time we had backprop.
+    We were able to get the models to 98.2% accuracy (as indicated by the validation accuracy mentioned below).
 
 
 ## Part 2 (branch: part-2)
@@ -40,7 +57,7 @@ Documentation below will be updated as I progress through the parts.
 ### Optimizing
 
 On this branch I try to optimize the performance of the model.
-Just chasing the highest accuracy score would lead to us choosing a model that has been overfitted and memorized the dataset.
+Just chasing the highest accuracy score measures in training would result in overfitting, no good.
 We need to pick something slightly before the peak of the curve.
 To do this I decided to use tools such as PyTorch Lightning and WandB.
 
@@ -53,19 +70,20 @@ Hopefully this will crunch some numbers!
 
 ### How do we determine the best model?
 
-By default we are now testing out 20 epochs (this might change later as i keep testing).
-We split up the dataset into training and validation (48k and 12k images respectively).
-Once an epoch has finished training on the 48k images, we validate it against the remaining 12k images.
-During the entire training process we keep track of which epoch scored the highest on the validation set.
-If the next epoch scores higher, we save it and delete the previous one.
-We do this 20 times and at the end we are left with the single best performing model.
-
+By default we are now testing out 20 epochs (this has since changed to 40 epochs with the best performing being between 32 and 36).
+We split up the dataset into training and validation (50k/10k respectively).
+Once an epoch has finished training on the 50k images we run validation (benchmark) the model against the remaining 10k images while keeping track of the validation accuracy (val_acc).
+If model n+1 scores higher than model n, we delete model n. At the end we are left with the single best performing checkpoint of that batch.
 We then compare these highest scoring models in WandB to pick the best one manually.
-We could arguably create a script that picks the one with the highest score but the metrics are right there in front of us in the UI.
-It's also a good learning experience to interpret these metrics visually.
+
+It is absolutely crucial for us to do this cross validation.
+Initially I trained the model on all 60k images and then ran validation on the training images.
+This resulted in a model that was biased towards the training data. Cheating if you like.
+We must not touch the test images until the actual final benchmark! Hence the 50/10 split of the training data.
+This 10k set could arguably be cut shorter to increase the amount of data the model is trained on. I might try that later to see if that changes the benchmark accuracy on the test images.
 
 Alongside this I also built my own benchmark to test actual accuracy against the test data.
-This benchmark feeds all of the 10k unseen test-images through the model and gives us an accuracy and error-rate represented in precents.
+This benchmark feeds all of the 10k unseen test-images through the model and gives us an accuracy/error-rate.
 This whole thing is accessible in the streamlit dashboard.
 
 
@@ -107,5 +125,31 @@ I'm not going to spend more time chasing decimal points as the network is not ye
 But its good to know that we should atleast start with 40 epochs next time.
 
 
-### Next step
-Should be to experiment with different types and numbers of layers aswell as min maxing with hyper-parameter tuning.
+### Additional layers
+
+Changes done to the arrchitectural structure:
+- Doubled the amount of channels in the two convolutional layers (from 32 and 64 to 62 and 128)
+- Added a third conv layer with 256 channels.
+- Increased fully connected layer size to 256 (increase by 100%).
+
+This resulted in a score of 99.54% on the benchmark (increase of 0.02%).
+
+With this I think we have our architecture in place and are ready to move onto other parameters.
+
+
+### Hyper-parameter tuning
+
+I am dividing the hyper-parameter tuning into two steps.
+I will implement the changes in one step, then train and benchmark before moving on to the next step.
+But we have finally reached the point where we can start experimenting with the values. I didn't want to do this before we had established a well working network architecture.
+
+Step 1:
+I have increased the dropout rate from 0.25 to 0.3 and decreased the weight decay from 1e-5 to 5e-6.
+I trained two models and they both scored 99.53% on the benchmark.
+This tiny loss is likely within normal variance so i will just go ahead and keep the current parameters and move on to the next step.
+
+Step 2:
+I implemented a learning rate scheduler that reduces the learning rate when the validation accuracy peaks.
+99.65% on benchmark.
+
+
