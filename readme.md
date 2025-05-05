@@ -153,3 +153,31 @@ I implemented a learning rate scheduler that reduces the learning rate when the 
 99.65% on benchmark.
 
 
+### Notebook refactoring
+
+I decided to refactor the python code into a Jupyter notebook.
+This was primarily to gather all functionality while still keeping the concerns separated.
+It also allows for a much clearer demo this friday.
+I also added alot of best practices to the flow in this new version.
+Some of the things that are new:
+- Dataset visualization before and after augmentation.
+- Settings gathered in one place.
+- Checkpoint listing
+- Model evaluation, confidence and accuracy
+- Misclassified examples
+- Feature maps from conv layers
+- Interactive testing
+
+Claude did most of the refactoring but here is the catch; Claude sort of get a little nosebleed when asked to edit a notebook. I don't know if I'm missing something or if cursors toolset is missing something. There is most likely a fix for this in some underground Github repository.
+Instead of taking time to research this I wrote a script that treats the notebook like a JSON (because it is) and then write markdown/codeblocks to it.
+Some billionare developer once said: "Lazy people tend to get things done the fastest!". This sort of applies here... 
+But no matter the toolset of the agent, AI refactoring will inevitably result in bugs.
+However, the network has since been restored to its former glory and all cells now run without tracebacks.
+
+
+
+### Benchmark
+
+Might want to add a dashboard for performing benchmark on all models.
+We could also make a notebook for this but I am a sucker for dashboards.
+
