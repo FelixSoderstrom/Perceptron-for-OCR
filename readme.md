@@ -28,7 +28,18 @@ Here is a brief summary of what happened in part-1:
 
 ## Part 2 (branch: part-2)
 
-Documentation below will be updated as I progress through the parts.
+### How to use
+All network related code can be found in the notebook.py file.
+In here you can see previews of the dataset, set hyper parameters and train your own models.
+installing the requirements can be done with the use of a cell at the top.
+
+After training a model (or just use the included one) you can run the streamlit app to benchmark it!
+Here you need to make sure to have installed the dependencies and also be in your venv.
+```bash
+pip install -r requirements.txt
+cd benchmark
+streamlit run app.py
+```
 
 
 ### Significant changes made and their impact on the accuracy score:
@@ -175,9 +186,4 @@ But no matter the toolset of the agent, AI refactoring will inevitably result in
 However, the network has since been restored to its former glory and all cells now run without tracebacks.
 
 
-
-### Benchmark
-
-Might want to add a dashboard for performing benchmark on all models.
-We could also make a notebook for this but I am a sucker for dashboards.
 
