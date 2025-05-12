@@ -65,6 +65,10 @@ streamlit run app.py
     Yep, quite a big step up.
     Training also took alot less time.
 
+6. New architecture: 99.6%
+    We now have a network that looks like this: conv1, conv2, conv3, fc1, fc2.
+    
+
 ### Optimizing
 
 On this branch I try to optimize the performance of the model.
