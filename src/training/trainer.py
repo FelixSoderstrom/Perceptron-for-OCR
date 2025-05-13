@@ -87,7 +87,7 @@ def setup_training(model, max_epochs=hp["max_epochs"]):
         max_epochs=max_epochs,
         accelerator=accelerator,
         devices=1 if accelerator != "cpu" else None,
-        log_every_n_steps=100,
+        log_every_n_steps=500,
         deterministic=True,
     )
 

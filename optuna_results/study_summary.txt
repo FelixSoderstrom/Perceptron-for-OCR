@@ -1,0 +1,15 @@
+Study name: optuna_study
+Number of completed trials: 20
+Best trial: #19
+Best validation accuracy: 0.9960
+Best hyperparameters:
+    conv_channels1: 112
+    conv_channels2: 192
+    conv_channels3: 256
+    kernel_size: 3
+    fc_size: 512
+    learning_rate: 0.001077899971474877
+    weight_decay: 5.373714990805009e-06
+    dropout_rate: 0.4
+    batch_size: 32
+    tune_augmentation: False

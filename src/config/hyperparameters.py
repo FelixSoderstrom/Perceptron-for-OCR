@@ -30,6 +30,11 @@ CHECKPOINTS_DIR = "checkpoints"
 WANDB_PROJECT = "pytorch-mnist-ocr"
 DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
 
+# HYPERPARAMETER TUNING
+OPTUNA_TRIALS = 20
+STUDY_NAME = "optuna_study"
+STORAGE = "sqlite:///optuna_studies.db"
+
 # Imported into the notebook
 hyperparameters = {
     "input_size": INPUT_SIZE,
@@ -50,4 +55,7 @@ hyperparameters = {
     "checkpoints_dir": CHECKPOINTS_DIR,
     "wandb_project": WANDB_PROJECT,
     "device": DEVICE,
+    "optuna_trials": OPTUNA_TRIALS,
+    "study_name": STUDY_NAME,
+    "storage": STORAGE,
 }

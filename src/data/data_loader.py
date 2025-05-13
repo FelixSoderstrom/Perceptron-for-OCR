@@ -32,25 +32,37 @@ def get_dataset(train: bool = True, transform=None):
     )
 
 
-def get_dataloaders():
+def get_dataloaders(
+    batch_size=None,
+    val_batch_size=None,
+    val_split=None,
+    custom_train_transform=None,
+):
     """
     Gets and splits the MNIST training data into training and validation DataLoaders.
 
     Args:
-        batch_size: Batch size for training
-        val_batch_size: Batch size for validation
-        val_split: Portion of training data to use for validation
+        batch_size: Batch size for training (defaults to hyperparameter config)
+        val_batch_size: Batch size for validation (defaults to hyperparameter config)
+        val_split: Portion of training data to use for validation (defaults to hyperparameter config)
+        custom_train_transform: Optional custom transform to apply to training data
 
     Returns:
         Tuple of (train_loader, val_loader)
     """
+    # Use hyperparameters from config if not explicitly provided
+    batch_size = batch_size if batch_size is not None else hp["batch_size"]
+    val_batch_size = (
+        val_batch_size if val_batch_size is not None else hp["val_batch_size"]
+    )
+    val_split = val_split if val_split is not None else hp["val_split"]
 
     # Load the full training dataset with just the base transform
     full_dataset = get_dataset(transform=transforms.ToTensor())
 
     # Calculate split sizes
     total_size = len(full_dataset)
-    val_size = int(total_size * hp["val_split"])
+    val_size = int(total_size * val_split)
     train_size = total_size - val_size
 
     # Split the dataset
@@ -60,13 +72,16 @@ def get_dataloaders():
     )
 
     # Define the augmentation transforms for training data
-    train_transform = transforms.Compose(
-        [
-            transforms.RandomRotation(10),
-            transforms.RandomAffine(degrees=0, translate=(0.1, 0.1)),
-            transforms.Normalize((0.5,), (0.5,)),
-        ]
-    )
+    if custom_train_transform is not None:
+        train_transform = custom_train_transform
+    else:
+        train_transform = transforms.Compose(
+            [
+                transforms.RandomRotation(10),
+                transforms.RandomAffine(degrees=0, translate=(0.1, 0.1)),
+                transforms.Normalize((0.5,), (0.5,)),
+            ]
+        )
 
     # Define transform for validation data (just normalization)
     val_transform = transforms.Normalize((0.5,), (0.5,))
@@ -78,7 +93,7 @@ def get_dataloaders():
     # Create DataLoaders
     train_loader = DataLoader(
         train_dataset,
-        batch_size=hp["batch_size"],
+        batch_size=batch_size,
         shuffle=True,
         num_workers=8,
         pin_memory=True,
@@ -86,7 +101,7 @@ def get_dataloaders():
     )
     val_loader = DataLoader(
         val_dataset,
-        batch_size=hp["val_batch_size"],
+        batch_size=val_batch_size,
         shuffle=False,
         num_workers=8,
         pin_memory=True,
@@ -97,6 +112,8 @@ def get_dataloaders():
         f"Dataset split: {train_size} training samples (with augmentation), "
         f"{val_size} validation samples (no augmentation)."
     )
+    print(f"Batch sizes: training={batch_size}, validation={val_batch_size}")
+
     return train_loader, val_loader
 
 

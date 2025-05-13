@@ -1,19 +1,27 @@
 # Perceptron for OCR
 
-### Overview
-This repository holds the entire perceptron project.
-I have as of today been programming for little over a year now (7 months in python) and now is the first time I get to play around with deep learning!
-We are taking this step by step and starting off with a single neuron, at the end we will have a (hopefully) very optimized neural network for the MNIST dataset.
-Yes, it's the hello world of machine learning and a great place to start.
-There is also a leaderboard online that keeps me motivated to min-max every aspect of this project.
+# Overview
 
-The project is divided into 2 parts (branches) and even smaller steps within those parts (commits).
+In this repository I will be making my first neural network for the MNIST dataset.
+I have been programming for little over a year now (7 months in python) and now is the first time I get to play around with deep learning.
+We have divided this into small managable chunks beginning with a single neuron and ending with a optimized neural network for handwritten digit recognition.
 
 
-## Part 1 (branch: part-1)
+
+# What we aim to achieve
+
+This is the second part of the project: Convolutional Neural Network.
+In this part I aim to integrate MLOps best practices and optimize the model for the highest accuracy.
+So far I have managed to get a 99.65% accuracy while playing around with setting hyperparameters manually.
+Optuna managed to get 99.63% accuracy when i let it run for 20 trials.
+Even higher scores are possible and I have not exhausted all of the possibilities with Optuna just yet.
+
+
+
+# Summary of part 1
 
 You are currently on branch: part-2 and can not view the contents of part-1.
-Here is a brief summary of what happened in part-1:
+Here is a brief summary of what happened in an earlier episode:
 - I built a single neuron as a python class.
     The neuron was mostly a random number generator but demonstrates how a single neuron in a neural network works.
 
@@ -26,80 +34,165 @@ Here is a brief summary of what happened in part-1:
     We were able to get the models to 98.2% accuracy (as indicated by the validation accuracy mentioned below).
 
 
-## Part 2 (branch: part-2)
 
-### How to use
-All network related code can be found in the notebook.py file.
-In here you can see previews of the dataset, set hyper parameters and train your own models.
-installing the requirements can be done with the use of a cell at the top.
+# How to use
 
-After training a model (or just use the included one) you can run the streamlit app to benchmark it!
-Here you need to make sure to have installed the dependencies and also be in your venv.
-```bash
-pip install -r requirements.txt
-cd benchmark
-streamlit run app.py
+The notebook is the main entrypoint for navigating this project.
+Simply open the notebook and run the cells in order.
+You might want to create a virtual environment beforehand although this is completely optional.
+
+Running all of the cells with their default settings will:
+- Install dependencies
+- Import libraries, variables and functions
+- Load a pre-trained model
+- Evaluate the pre-trained model
+- Visualize the data
+- Visualize the results of the model
+
+The notebook also allows for training new models and running hyperparameter tuning with Optuna.
+The options will be markes as False in the beginning of the notebook. Set either of them to True is you wish to try it out yourself!
+Loading a pre-trained model is the only step mentioned above that will be replaces with the option you pick.
+All of the evaluation and visualization will happen on your newly trained model if you decide to run all cells automatically.
+
+
+# Project structure
+
+Here are the important files you need to know about:
+```
+notebook.ipynb
+├───┬ checkpoints
+|   ├── checkpoint_1.ckpt
+|   ├── ...
+|   └── checkpoint_n.ckpt
+|
+├───┬ optuna_results
+|   └── study_summary.txt
+|
+├───┬ wandb
+|   └── nested folders for each run
+|
+├───┬ src
+|   ├── config
+|   |   └── hyperparameters.py
+|   |
+|   ├── data
+|   |   ├── MNIST
+|   |   |   ├── raw
+|   |   |   |   ├── dataset files
+|   |   |   |   └── ...
+|   |   ├── augmentation.py
+|   |   └── data_loaders.py
+|   |
+|   ├── evaluation
+|   |   └── evaluation.py
+|   |
+|   ├── models
+|   |   └── network.py
+|   |
+|   ├── optimization
+|   |   └── hyperparameter_tuning.py
+|   |
+|   ├── training
+|   |   └── trainer.py
+|   |
+|   ├── visualization
+|   |   └── visualization.py
+|   |
+|   └── __init__.py
+|
+└── more files like readme, venv etc..
 ```
 
+Explanation: 
+- Checkpoints directory. The output folder for out trained models.
+- Optuna results directory. The output folder for the Optuna study.
+- WandB directory. The output folder for wandb runs.
+- src directory. The source code for the project.
+    - hyperparameters.py holds all hyperparameters
+    - augmentation.py handles data augmentation
+    - data_loaders.py handles data loading
+    - evaluation.py evaluated the loaded model
+    - network.py contains the entire network class
+    - hyperparameter_tuning.py handles the hyperparameter tuning using optuna
+    - trainer.py sets up trainer and handles training
+    - visualization.py handles all visualization in the notebook
 
-### Significant changes made and their impact on the accuracy score:
+
+
+# Significant changes made to the network
+
+Here I will list significant changes that I've made to the network and how it directly affected the accuracy score.
 
 1. Initial Model: ~98.2%
     I passed all 60k images through a network for 10 epochs.
+    This initial model only had fully connected layers.
 
 2. Increased Epochs: ~98.1%
     I increased the total epochs to 20 and saved the last one.
+    My model clearly needed more training. I later increased this even further.
 
 3. Dataset Splitting and Validation: ~97.1%
-    I split the dataset into training and validation sets.
-    I traned each epoch on 48k images and then validated the model on the remaining 12k.
+    I implemented cross validation by splitting the dataset into training and validation.
+    I traned each epoch on 50k images and then validated the model on the remaining 10k.
     After each validation test I deleted the lower performing model.
+    This lowered the accuracy by 1% but this is a good practice we need to implement.
+    It gives us the ability to compare models and pick the best one isntead of running benchmarks on every single epoch.
 
 4. Data Augmentation: ~96.3%
-    We are from here on out measuring accuracy with the benchmark I made (read more about this under "How do we determine the best model?").
+    I also created a benchmark in streamlit but this has since been scrapped. Equivalent functionality is found within the notebook after training is complete.
     I applied augmentation to the dataset (see more info below).
     Accuracy dropped by 1% which is probably a sign of overfitting on the previous models.
     I expect this number to increase after implementing convolutional layers.
 
 5. Convolutional Layers: ~99.33%
-    Yep, quite a big step up.
-    Training also took alot less time.
+    This enables our network to "see" the image in 2 dimensions instead of 1.
+    The network picks up on features such as egdes and shapes instead of reading individual pixel values of the image.
+    This yielded ~3& increase in accuracy! The learning process was also slightly faster.
+    This is because of how conv layers work compared to FC layers. In a nutshell, conv layers have less learnable parameters compared to FC layers and therefore the compute time per layer is less.
 
-6. New architecture: 99.6%
+6. New architecture: ~99.65%
     We now have a network that looks like this: conv1, conv2, conv3, fc1, fc2.
+    Previously we only had one convolutional layer.
+    This gave us higher accuracy and its the network achitecture I am going to keep throughout the remainder of the project.
     
+7. Hyperparameter Tuning: ~99.65%
+    I had already been experimenting with manual hyperparameter tuning with the help of LLM's.
+    This time I tried Optuna and wow, I should have done that from the start.
+    However, we didn't really manage to get any better results.
+    This dataset is a very known one and many examples of highly optimized MNIST networks have been documented (and used in LLM training).
+    Therefore my consulting with Claude and Chat-GPT has indeed given me highly optimized parameters before even trying out optuna.
+    Using optuna was a valuable experience and i will definately use it in the future over manual tuning.
 
-### Optimizing
 
-On this branch I try to optimize the performance of the model.
-Just chasing the highest accuracy score measures in training would result in overfitting, no good.
-We need to pick something slightly before the peak of the curve.
-To do this I decided to use tools such as PyTorch Lightning and WandB.
+# The project diary
+
+Below here are implementations done to code in the order they happened and any relevant information to these changes.
+I talk about the actual changes made, difference in accuracy and why things are the way they are.
+
+
+### Cross Validation
+
+I want to have a model that performs very well.
+But blindly chasing the highest accuracy score on the training data would result in overfitting.
+We needed a way to validate how the model performs on unseen data aswell as monitor metrics such as loss and accuracy.
+This is where PyTorch Lightning and WandB come in.
 
 WandB allows me to view metrics in the browser and compare checkpoints.
-In combination with PyTorch Lightning I automatically save a checkpoint both locally and to cloud once a training run is completed.
+PyTorch streamlines the machine learning process and allows for easy checkpointing.
 
-I will also explore things like data augmentation, conv layers, hyper-parameter tuning, etc.
-Hopefully this will crunch some numbers!
-
-
-### How do we determine the best model?
-
-By default we are now testing out 20 epochs (this has since changed to 40 epochs with the best performing being between 32 and 36).
+To prevent overfitting I decided to introduce cross validation.
 We split up the dataset into training and validation (50k/10k respectively).
-Once an epoch has finished training on the 50k images we run validation (benchmark) the model against the remaining 10k images while keeping track of the validation accuracy (val_acc).
-If model n+1 scores higher than model n, we delete model n. At the end we are left with the single best performing checkpoint of that batch.
-We then compare these highest scoring models in WandB to pick the best one manually.
+Once an epoch has finished training on the 50k images we run validation on that model against the remaining 10k images while keeping track of the validation accuracy (val_acc).
+If epoch2 scores higher than epoch1, we delete epoch1. At the end we are left with the single best performing checkpoint of that batch.
+For manual hyperparameter tuning I then compared these checkpoints in the WandB dashboard and picked the best one.
+Later on I introduced Optuna to automate this process.
 
-It is absolutely crucial for us to do this cross validation.
+But why split the dataset?
 Initially I trained the model on all 60k images and then ran validation on the training images.
-This resulted in a model that was biased towards the training data. Cheating if you like.
-We must not touch the test images until the actual final benchmark! Hence the 50/10 split of the training data.
-This 10k set could arguably be cut shorter to increase the amount of data the model is trained on. I might try that later to see if that changes the benchmark accuracy on the test images.
+This resulted in a model that was biased towards the training data. It gave us a fake accuracy score.
+And we must not touch the test images until the final benchmark. Therefore the split of the training data.
 
-Alongside this I also built my own benchmark to test actual accuracy against the test data.
-This benchmark feeds all of the 10k unseen test-images through the model and gives us an accuracy/error-rate.
-This whole thing is accessible in the streamlit dashboard.
+Benchmarking (in both the notebook and the old streamlit dashboard) is always done using the test data and the test data is exclusively used for the benchmark!
 
 
 ### Data augmentation
@@ -110,11 +203,9 @@ Types of augmentation being used:
 - ElasticTransform: Deformations of the image.
 - ColorJitter: Brightness, contrast and saturation.
 
-Notable is that the accuracy score dropped with almost 1% after implementing data augmentation.
+When augmentation was introduced, the accuracy score dropped with almost 1%.
 This highly suggests that the previous models were slightly overfit.
-Previously we tried to anticipate overfitting by keeping track of the accuracy by splitting the dataset and running validation on 10k of the images.
-We kept the best performing epoch as out checkpoint based on this metric. It might have been better to atually keep the epoch prior to the highest performing one.
-Im going into the next phase with a new mindset and will treat this decrease with 1% as a good thing.
+
 
 
 ### Convolutional layers
@@ -126,9 +217,9 @@ This type of network also becomes alot less computationally heavy.
 
 Just as expected the accuracy increased and training time increased.
 The first two models procured scored 99.40% and 99.41% accuracy respectively on my own benchmark.
-My validation mechanism pulled the last epochs of the training runs, suggesting that the accuracy might even go higher than this.
-Previously, accuracy peaked around epochs 15-17.
+Previously, accuracy peaked around epochs 15-17 They are now peaking at 18-20.
 So lets try more epochs and see if we are leavign decimals on the table.
+
 
 
 ### Increasing the number of epochs
@@ -140,6 +231,7 @@ I'm not going to spend more time chasing decimal points as the network is not ye
 But its good to know that we should atleast start with 40 epochs next time.
 
 
+
 ### Additional layers
 
 Changes done to the arrchitectural structure:
@@ -148,8 +240,8 @@ Changes done to the arrchitectural structure:
 - Increased fully connected layer size to 256 (increase by 100%).
 
 This resulted in a score of 99.54% on the benchmark (increase of 0.02%).
-
 With this I think we have our architecture in place and are ready to move onto other parameters.
+
 
 
 ### Hyper-parameter tuning
@@ -159,13 +251,20 @@ I will implement the changes in one step, then train and benchmark before moving
 But we have finally reached the point where we can start experimenting with the values. I didn't want to do this before we had established a well working network architecture.
 
 Step 1:
-I have increased the dropout rate from 0.25 to 0.3 and decreased the weight decay from 1e-5 to 5e-6.
-I trained two models and they both scored 99.53% on the benchmark.
-This tiny loss is likely within normal variance so i will just go ahead and keep the current parameters and move on to the next step.
+Manual hyper-parameter tuning.
+Here are some things that I tried out
+- Increased dropout rate from 0.25 to 0.3
+- Decreased weight decay from 1e-5 to 5e-6.
+- Implemented LR-scheduler that reduces the learning rate when the validation accuracy peaks.
+I trained two models and they both scored ~99.6% on the benchmark.
+Tiny losses in between models are likely within normal variance.
 
 Step 2:
-I implemented a learning rate scheduler that reduces the learning rate when the validation accuracy peaks.
-99.65% on benchmark.
+Automated hyper-parameter tuning with Optuna.
+This actually did not change the accuracy by much and in most cases is actually worse.
+This is most likely because I have been asking LLM's for help with understanding the tuning process.
+When doing this I have personally become biased towards the language models bias!
+Well, I would be stupid not to try what the AI suggests in such a popular dataset as MNIST. And it worked in my favour! Who could have guessed?
 
 
 ### Notebook refactoring
@@ -191,3 +290,18 @@ However, the network has since been restored to its former glory and all cells n
 
 
 
+I decided to refactor the project into a notebook.
+This took way longer than I would like to admit.
+I like to automate these kinds of thigns as much as possible but it just so happens that when you give Claude the instruction to write a notebook he sort of gets a little nosebleed and goes on strike.
+I eventually wrote a script that injects the cells into the notebook and handed that tool to my IDE agent.
+Everything went sort of okay. I lost some VERY important features in the process that took a while to find.
+
+After all was set and done I realised how stupid this idea was and went back to the old format.
+But I had now come to the point where my new structure was nothing like the old one before the notebook. So another refactor was in order..
+
+The current implementation is what matters and here is the summary:
+- All machine learning is done outside of the notebook.
+- The notebook uses functions defined elsewhere.
+- Learning, evaluating, visualizing, hyperparameter tuning can all be done from the notebook.
+- The notebook is the primary entrypoint for doing all the above things.
+- 

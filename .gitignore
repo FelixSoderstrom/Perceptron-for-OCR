@@ -9,3 +9,4 @@ pytorch-mnist-ocr
 wandb
 .cursorrules
 venv
+optuna_studies.db
