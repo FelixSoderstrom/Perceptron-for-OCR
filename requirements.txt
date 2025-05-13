@@ -1,38 +1,41 @@
-# Core requirements for Python 3.12
+# Core requirements for Python 3.10
 # Base build tools - install these first
-setuptools>=68.0.0
-wheel>=0.40.0
-pip>=23.0.0
-packaging>=23.0
+setuptools>=65.0.0
+wheel>=0.38.0
+pip>=22.0.0
+packaging>=21.0
 
 # Core machine learning packages - with CUDA support specified
---index-url https://download.pytorch.org/whl/cu124
-torch==2.4.0
-torchvision==0.19.0
-torchaudio==2.4.0
+--index-url https://download.pytorch.org/whl/cu118
+torch==2.0.1
+torchvision==0.15.2
+torchaudio==2.0.2
 
 # Remove the index-url constraint for remaining packages
 --index-url https://pypi.org/simple
 # ML frameworks and tools
-pytorch-lightning==2.3.0
-numpy>=1.26.0
-scikit-learn>=1.4.0
-torchmetrics>=1.2.0
+pytorch-lightning==2.0.9
+numpy>=1.22.0,<2.0.0
+scikit-learn>=1.2.0
+torchmetrics>=0.11.0
 
 # Visualization and utilities
-matplotlib>=3.8.0
+matplotlib>=3.5.0
 
 # Experiment tracking
-wandb>=0.16.0
-tensorboard==2.19.0
-nbformat==5.10
+wandb>=0.15.0
+tensorboard==2.13.0
+nbformat==5.9.0
 
 # Additional dependencies
-pillow>=10.0.0
-tqdm>=4.66.0
+pillow>=9.0.0
+tqdm>=4.64.0
 
 # Hyperparameter optimization
 optuna>=3.0.0
 optuna-integration[pytorch_lightning]
-plotly>=5.14.0
+plotly>=5.10.0
 kaleido==0.2.1
+
+# Add Jupyter for the notebook
+jupyter>=1.0.0

@@ -2,13 +2,11 @@
 
 # Overview
 
+### Introduction
+
 In this repository I will be making my first neural network for the MNIST dataset.
 I have been programming for little over a year now (7 months in python) and now is the first time I get to play around with deep learning.
 We have divided this into small managable chunks beginning with a single neuron and ending with a optimized neural network for handwritten digit recognition.
-
-
-
-# What we aim to achieve
 
 This is the second part of the project: Convolutional Neural Network.
 In this part I aim to integrate MLOps best practices and optimize the model for the highest accuracy.
@@ -17,45 +15,47 @@ Optuna managed to get 99.63% accuracy when i let it run for 20 trials.
 Even higher scores are possible and I have not exhausted all of the possibilities with Optuna just yet.
 
 
+### How to run
 
-# Summary of part 1
-
-You are currently on branch: part-2 and can not view the contents of part-1.
-Here is a brief summary of what happened in an earlier episode:
-- I built a single neuron as a python class.
-    The neuron was mostly a random number generator but demonstrates how a single neuron in a neural network works.
-
-- I built a network in NumPy.
-    This version took in the flattened data from a single image in the dataset and processed the information through 3 layers.
-    This version did not include backprop so arguably, this was a 784-dimensional random number generator.
-
-- I built the same network in PyTorch.
-    This version also took in the flattened image and passed it along all layers, btu this time we had backprop.
-    We were able to get the models to 98.2% accuracy (as indicated by the validation accuracy mentioned below).
+For docker users:
+1. Make sure you have the following installed:
+- Docker desktop
+- NVIDIA GPU (optional but recommended)
+- NVIDIA Drivers (optional but recommended)
+- NVIDIA Container Toolkit (optional but recommended)
 
 
+2. Build and run the container
+```bash
+docker compose up -d
+```
 
-# How to use
+3. Access the Jupyter Notebook by opening your browser and navigating to:
 
-The notebook is the main entrypoint for navigating this project.
-Simply open the notebook and run the cells in order.
-You might want to create a virtual environment beforehand although this is completely optional.
+```
+http://localhost:8888
+```
 
-Running all of the cells with their default settings will:
-- Install dependencies
-- Import libraries, variables and functions
-- Load a pre-trained model
-- Evaluate the pre-trained model
-- Visualize the data
-- Visualize the results of the model
+4. You'll need the token to access the notebook. Get it by running:
 
-The notebook also allows for training new models and running hyperparameter tuning with Optuna.
-The options will be markes as False in the beginning of the notebook. Set either of them to True is you wish to try it out yourself!
-Loading a pre-trained model is the only step mentioned above that will be replaces with the option you pick.
-All of the evaluation and visualization will happen on your newly trained model if you decide to run all cells automatically.
+```bash
+docker logs mnist-ocr
+```
+Look for a URL with a token parameter, like: `http://127.0.0.1:8888/?token=abc123...`
 
 
-# Project structure
+For windows users:
+
+1. Create a virtual environment (make sure you are using python 3.10)
+```bash
+python -m venv venv && pip install -r requirements.txt
+```
+
+2. Start the notebook and run the cells!
+
+
+
+### Project structure
 
 Here are the important files you need to know about:
 ```
@@ -116,6 +116,44 @@ Explanation:
     - hyperparameter_tuning.py handles the hyperparameter tuning using optuna
     - trainer.py sets up trainer and handles training
     - visualization.py handles all visualization in the notebook
+
+
+
+# Summary of part 1
+
+You are currently on branch: part-2 and can not view the contents of part-1.
+Here is a brief summary of what happened in an earlier episode:
+- I built a single neuron as a python class.
+    The neuron was mostly a random number generator but demonstrates how a single neuron in a neural network works.
+
+- I built a network in NumPy.
+    This version took in the flattened data from a single image in the dataset and processed the information through 3 layers.
+    This version did not include backprop so arguably, this was a 784-dimensional random number generator.
+
+- I built the same network in PyTorch.
+    This version also took in the flattened image and passed it along all layers, btu this time we had backprop.
+    We were able to get the models to 98.2% accuracy (as indicated by the validation accuracy mentioned below).
+
+
+
+# How to use
+
+The notebook is the main entrypoint for navigating this project.
+Simply open the notebook and run the cells in order.
+You might want to create a virtual environment beforehand although this is completely optional.
+
+Running all of the cells with their default settings will:
+- Install dependencies
+- Import libraries, variables and functions
+- Load a pre-trained model
+- Evaluate the pre-trained model
+- Visualize the data
+- Visualize the results of the model
+
+The notebook also allows for training new models and running hyperparameter tuning with Optuna.
+The options will be markes as False in the beginning of the notebook. Set either of them to True is you wish to try it out yourself!
+Loading a pre-trained model is the only step mentioned above that will be replaces with the option you pick.
+All of the evaluation and visualization will happen on your newly trained model if you decide to run all cells automatically.
 
 
 

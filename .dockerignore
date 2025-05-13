@@ -1,0 +1,60 @@
+# Git
+.git
+.gitignore
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# Docker
+Dockerfile
+compose.yaml
+.dockerignore
+DOCKER_README.md
+
+# Virtual Environment
+venv/
+ENV/
+
+# PyCharm
+.idea/
+
+# VS Code
+.vscode/
+
+# Runtime data
+wandb/
+optuna_results/
+
+# Exclude large model checkpoints from build context
+# They will be mounted as volumes instead
+checkpoints/
+
+# Dataset files - will be downloaded during runtime
+data/MNIST/raw/
+
+# System specific files
+.DS_Store
+Thumbs.db 

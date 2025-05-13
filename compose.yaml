@@ -1,0 +1,26 @@
+services:
+  mnist-ocr:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: mnist-ocr:latest
+    container_name: mnist-ocr
+    ports:
+      - "8888:8888"  # Jupyter notebook
+    volumes:
+      - ./:/app
+      - ./data:/app/data
+      - ./checkpoints:/app/checkpoints
+      - ./wandb:/app/wandb
+      - ./optuna_results:/app/optuna_results
+    environment:
+      - NVIDIA_VISIBLE_DEVICES=all
+      - WANDB_API_KEY=${WANDB_API_KEY:-}  # For Weights & Biases integration
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+    restart: unless-stopped 
